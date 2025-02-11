@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Restaurant Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    /* Global Section Styling */
+    .section {
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      background: #fff;
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    body {
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
+      padding: 1rem 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 1rem;
+    }
+    /* Fixed widths for first two columns */
+    .dish-name { width: 200px; }
+    .dish-category { width: 150px; }
+    /* Each input-group will flex equally */
+    .input-group { flex: 1; }
+    /* Container for delete button with fixed width */
+    .delete-container {
+      flex: 0 0 80px;
+      text-align: center;
+    }
+    /* Input row uses flex layout */
+    .input-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0.5rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+    /* Style for text inputs */
+    .dish-name-input, .dish-category-input, .quantity, .price, .packaging {
+      width: 100%;
+      padding: 6px 10px;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .effective-value {
+      background: #e9ecef;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 500;
+      color: #2c3e50;
+      min-height: 38px;
+      text-align: right;
+    }
+    .total-row {
+      background: #d4edda !important;
+      font-weight: bold;
+      margin-top: 2rem;
+    }
+    /* Align totals to the right */
+    .total-row .input-group { text-align: right; }
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .radio-group label { margin-bottom: 0; }
+    .hidden { display: none; }
+    .discount-section, #eliteDiscountSection {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .checkbox-item { display: flex; align-items: center; gap: 0.5rem; min-width: 200px; }
+    .cash-discount-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .cash-discount-item { display: block; margin-bottom: 10px; font-size: 0.9rem; }
+    .cash-discount-item label { min-width: 150px; }
+    /* Elite Tier Table */
+    #eliteTierTable { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    #eliteTierTable th, #eliteTierTable td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: center;
+    }
+    #eliteTierTable th { background: #f8f9fa; }
+    /* Final Bills Section */
+    #finalBillsSection table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #finalBillsSection th, #finalBillsSection td {
+      border: 1px solid #dee2e6;
+      padding: 8px;
+      text-align: center;
+    }
+    #finalBillsSection th { background: #f8f9fa; }
+    /* Box for bill sections */
+    .box {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: #fff;
+    }
+    /* Normal Bill styling */
+    .bill-box .bill-field label { font-weight: bold; margin-right: 0.5rem; }
+    .bill-box .bill-field { margin-bottom: 1rem; }
+    /* Dish actions container */
+    .dish-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .dish-actions button {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.95rem;
+    }
+    /* Toggle arrow for Dish Calculations */
+    #toggleDishCalculations {
+      cursor: pointer;
+      font-size: 1.25rem;
+      border: none;
+      background: transparent;
+      margin-bottom: 0.5rem;
+    }
+    /* Reset Button at Top */
+    #resetDefaultsBtn {
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Delete All Default Values Button at the Top -->
+    <button id="resetDefaultsBtn" class="btn btn-warning">Delete All Default Values</button>
+
+    <!-- Dish Calculations Section with Toggle Arrow -->
+    <div class="section">
+      <h3>
+        Dish Calculations
+        <button id="toggleDishCalculations" class="btn btn-link">▼</button>
+      </h3>
+      <!-- Hidden by default -->
+      <div id="dishCalculationsContainer" class="hidden">
+        <div class="sticky-header">
+          <div class="input-row" style="background: transparent; padding: 0;">
+            <span class="dish-name">Dish Name</span>
+            <span class="dish-category">Category</span>
+            <div class="input-group"><label>Quantity</label></div>
+            <div class="input-group"><label>Price (₹)</label></div>
+            <div class="input-group"><label>Effective Price (₹)</label></div>
+            <div class="input-group"><label>Packaging Charges (₹)</label></div>
+            <div class="input-group"><label>Effective Packaging (₹)</label></div>
+            <div class="input-group delete-container"><label>Action</label></div>
+          </div>
+        </div>
+        <form id="mainForm"></form>
+        <div class="dish-actions">
+          <button id="addDishBtn" class="btn btn-secondary">Add Dish</button>
+          <button id="applyDishChangesBtn" class="btn btn-primary">Apply Dish Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Charge Section -->
+    <div class="section">
+      <h3>Service Charge</h3>
+      <div class="radio-group">
+        <span>Apply Service Charge?</span>
+        <label><input type="radio" name="applyServiceCharge" value="yes" checked> Yes</label>
+        <label><input type="radio" name="applyServiceCharge" value="no"> No</label>
+      </div>
+      <div id="serviceChargeFieldsContainer">
+        <div class="input-row">
+          <span class="dish-name">Service Charge %</span>
+          <div class="input-group">
+            <input type="number" class="service-charge" step="0.01" min="0" max="99" value="11.00">
+          </div>
+        </div>
+        <div class="radio-group">
+          <span>Is tax applicable on service charge?</span>
+          <label><input type="radio" name="taxOnServiceCharge" value="yes" checked> Yes</label>
+          <label><input type="radio" name="taxOnServiceCharge" value="no"> No</label>
+        </div>
+        <div id="serviceTaxFields">
+          <div class="input-row">
+            <span class="dish-name">Service Charge CGST %</span>
+            <div class="input-group">
+              <input type="number" class="service-cgst" step="0.01" min="0" max="99" value="2.50">
+            </div>
+          </div>
+          <div class="input-row">
+            <span class="dish-name">Service Charge SGST %</span>
+            <div class="input-group">
+              <input type="number" class="service-sgst" step="0.01" min="0" max="99" value="2.50">
+            </div>
+          </div>
+        </div>
+        <button id="applyServiceChargeBtn" class="btn btn-primary mt-2">Apply Service Charge Changes</button>
+      </div>
+    </div>
+
+    <!-- Tax Values Section -->
+    <div class="section">
+      <h3>Tax Values</h3>
+      <div class="radio-group">
+        <span>Apply Tax?</span>
+        <label><input type="radio" name="applyTax" value="yes" checked> Yes</label>
+        <label><input type="radio" name="applyTax" value="no"> No</label>
+      </div>
+      <div id="taxValuesContainer">
+        <div class="input-row">
+          <span class="dish-name">CGST %</span>
+          <div class="input-group">
+            <input type="number" class="cgst" step="0.01" min="0" max="99" value="2.50">
+          </div>
+        </div>
+        <div class="input-row">
+          <span class="dish-name">SGST %</span>
+          <div class="input-group">
+            <input type="number" class="sgst" step="0.01" min="0" max="99" value="2.50">
+          </div>
+        </div>
+        <button id="applyTaxBtn" class="btn btn-primary mt-2">Apply Tax Changes</button>
+      </div>
+    </div>
+
+    <!-- Discount Section -->
+    <div class="section">
+      <h3>Discounts</h3>
+      <div class="radio-group">
+        <span>Apply Discount?</span>
+        <label><input type="radio" name="applyDiscount" value="yes"> Yes</label>
+        <label><input type="radio" name="applyDiscount" value="no" checked> No</label>
+      </div>
+      <div id="discountSection" class="hidden">
+        <div class="discount-type-selector">
+          <div class="radio-group">
+            <span>Select Discount Type:</span>
+            <label><input type="radio" name="discountType" value="general"> General Discount</label>
+            <label><input type="radio" name="discountType" value="cash"> Cash Discount</label>
+            <label><input type="radio" name="discountType" value="elite"> Elite Discount</label>
+          </div>
+        </div>
+        <!-- General Discount Options -->
+        <div id="generalDiscountSection" class="discount-section hidden">
+          <div class="input-row">
+            <span class="dish-name">Enter Discount Percentage</span>
+            <div class="input-group">
+              <input type="number" class="discount-percentage" step="0.01" min="0" max="100" value="25">
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <label for="discFood">
+                  <input type="checkbox" id="discFood" name="discountCategories" value="Food"> Food <span id="general-discount-food-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discHookah">
+                  <input type="checkbox" id="discHookah" name="discountCategories" value="Hookah"> Hookah <span id="general-discount-hookah-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discOthers">
+                  <input type="checkbox" id="discOthers" name="discountCategories" value="Others"> Others <span id="general-discount-others-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discPackaged">
+                  <input type="checkbox" id="discPackaged" name="discountCategories" value="Packaged Item"> Packaged Item <span id="general-discount-packaged-item-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discAlcohol">
+                  <input type="checkbox" id="discAlcohol" name="discountCategories" value="Alcoholic Beverage"> Alcoholic Beverage <span id="general-discount-alcoholic-beverage-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discNonAlcohol">
+                  <input type="checkbox" id="discNonAlcohol" name="discountCategories" value="Non Alcoholic Beverage"> Non Alcoholic Beverage <span id="general-discount-non-alcoholic-beverage-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discTobacco">
+                  <input type="checkbox" id="discTobacco" name="discountCategories" value="Tobacco"> Tobacco <span id="general-discount-tobacco-total-text"></span>
+                </label>
+              </div>
+              <div class="checkbox-item">
+                <label for="discMRP">
+                  <input type="checkbox" id="discMRP" name="discountCategories" value="MRP"> MRP <span id="general-discount-mrp-total-text"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Cash Discount Options -->
+        <div id="cashDiscountSection" class="discount-section hidden">
+          <div class="cash-discount-grid">
+            <div class="cash-discount-item">
+              <label>Food</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-food-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Hookah</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-hookah-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Others</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-others-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Packaged Item</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-packaged-item-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Alcoholic Beverage</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-alcoholic-beverage-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Non Alcoholic Beverage</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-non-alcoholic-beverage-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>Tobacco</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-tobacco-total">(₹0.00)</div>
+            </div>
+            <div class="cash-discount-item">
+              <label>MRP</label>
+              <input type="number" class="cash-discount" step="0.01" min="0" placeholder="Discount amount">
+              <div id="cash-discount-mrp-total">(₹0.00)</div>
+            </div>
+          </div>
+        </div>
+        <!-- Elite Discount Options -->
+        <div id="eliteDiscountSection" class="discount-section hidden">
+          <div class="mb-2">
+            <label>Is restaurant membership available?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="restaurantMembership" value="yes" checked> Yes</label>
+              <label><input type="radio" name="restaurantMembership" value="no"> No</label>
+            </div>
+          </div>
+          <div id="membershipDiscountDiv" class="mb-2">
+            <label>Enter restaurant membership discount%</label>
+            <input type="number" class="membership-discount form-control" step="0.01" max="100" value="10" placeholder="Membership Discount">
+          </div>
+          <div id="membershipPriceDiv" class="mb-2">
+            <label>Enter Restaurant Membership Price</label>
+            <input type="number" class="membership-price form-control" step="0.01" value="100" placeholder="Membership Price">
+          </div>
+          <div class="mb-2">
+            <label>Does user have restaurant membership?</label>
+            <div class="radio-group">
+              <label><input type="radio" name="userMembershipStatus" value="yes"> Yes</label>
+              <label><input type="radio" name="userMembershipStatus" value="no"> No</label>
+            </div>
+          </div>
+          <div id="eliteTierTableDiv">
+            <h6>Tiered Elite Discount</h6>
+            <table id="eliteTierTable" class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Elite Discount (%)</th>
+                  <th>Earn Criteria</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="number" class="elite-tier-discount form-control" step="0.01" max="100" value="10"></td>
+                  <td><input type="number" class="elite-tier-earn form-control" step="0.01" value="1000"></td>
+                  <td><button class="btn btn-sm btn-danger delete-tier" disabled>Delete</button></td>
+                </tr>
+                <tr>
+                  <td><input type="number" class="elite-tier-discount form-control" step="0.01" max="100" value="20"></td>
+                  <td><input type="number" class="elite-tier-earn form-control" step="0.01" value="3000"></td>
+                  <td><button class="btn btn-sm btn-danger delete-tier">Delete</button></td>
+                </tr>
+                <tr>
+                  <td><input type="number" class="elite-tier-discount form-control" step="0.01" max="100" value="30"></td>
+                  <td><input type="number" class="elite-tier-earn form-control" step="0.01" value="5000"></td>
+                  <td><button class="btn btn-sm btn-danger delete-tier">Delete</button></td>
+                </tr>
+              </tbody>
+            </table>
+            <button id="addTierBtn" class="btn btn-sm btn-secondary">Add Tier</button>
+          </div>
+        </div>
+        <!-- Apply Discount Button and Result -->
+        <div id="discountApplyContainer" class="mt-3">
+          <button id="applyDiscountBtn" class="btn btn-primary" disabled>Apply Discount</button>
+        </div>
+        <div id="discountResult" class="mt-3"></div>
+      </div>
+    </div>
+
+    <!-- UCF Section -->
+    <div class="section" id="ucfSection">
+      <h3>UCF</h3>
+      <div class="radio-group">
+        <span>Is UCF applicable?</span>
+        <label><input type="radio" name="ucfApplicable" value="yes" checked> Yes</label>
+        <label><input type="radio" name="ucfApplicable" value="no"> No</label>
+      </div>
+      <div id="ucfFields">
+        <div class="input-row">
+          <span class="dish-name">Enter UCF%</span>
+          <div class="input-group">
+            <input type="number" id="ucfPercentage" step="0.01" value="10.25">
+          </div>
+        </div>
+        <div class="input-row">
+          <span class="dish-name">Enter GST on UCF%</span>
+          <div class="input-group">
+            <input type="number" id="ucfGst" step="0.01" value="18">
+          </div>
+        </div>
+        <button id="applyUCFBtn" class="btn btn-primary mt-2">Apply UCF Changes</button>
+      </div>
+    </div>
+
+    <!-- Separator -->
+    <div class="separator"></div>
+
+    <!-- Bill Calculation Section -->
+    <div class="section" id="billCalculationSection">
+      <div class="row">
+        <!-- Normal Bill Column -->
+        <div class="col-md-6">
+          <div class="box bill-box p-3">
+            <h4>Normal Bill</h4>
+            <div class="bill-field">
+              <label>Effective Dish Value:</label>
+              <span id="normalBillEffectiveValue">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Discount Applied:</label>
+              <span id="normalBillDiscountApplied">None</span>
+            </div>
+            <!-- New Breakdown Buttons -->
+            <div class="d-flex gap-2 mb-2">
+              <button id="dishWiseBreakdownBtn" class="btn btn-primary">Show Dish Wise Discount Breakdown</button>
+              <button id="categoryWiseBreakdownBtn" class="btn btn-primary">Show Category Wise Discount Breakdown</button>
+            </div>
+            <div class="bill-field" id="normalBillBreakdownSection" style="display: none;"></div>
+            <div class="bill-field">
+              <label>Effective Bill Discount Value:</label>
+              <span id="billDiscountValue">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective Bill Dish Value:</label>
+              <span id="billDishValue">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective Bill Service Charge:</label>
+              <span id="billServiceCharge">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective Bill Packaging Charges:</label>
+              <span id="billPackagingCharges">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <h5>Taxes</h5>
+              <table id="taxesTable" class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Value (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Bill CGST</td>
+                    <td id="billCGST">₹0.00</td>
+                  </tr>
+                  <tr>
+                    <td>Bill SGST</td>
+                    <td id="billSGST">₹0.00</td>
+                  </tr>
+                  <tr>
+                    <td>Service Charge CGST</td>
+                    <td id="serviceChargeCGST">₹0.00</td>
+                  </tr>
+                  <tr>
+                    <td>Service Charge SGST</td>
+                    <td id="serviceChargeSGST">₹0.00</td>
+                  </tr>
+                  <tr>
+                    <td>Total CGST</td>
+                    <td id="totalCGST">₹0.00</td>
+                  </tr>
+                  <tr>
+                    <td>Total SGST</td>
+                    <td id="totalSGST">₹0.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="bill-field">
+              <label>Effective Bill UCF:</label>
+              <span id="billUCF">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective CGST Tax On UCF:</label>
+              <span id="billUCF_CGST">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective SGST Tax On UCF:</label>
+              <span id="billUCF_SGST">₹0.00</span>
+            </div>
+            <div class="bill-field">
+              <label>Effective Bill Tax On UCF:</label>
+              <span id="billUCF_Total">₹0.00</span>
+            </div>
+            <div class="bill-field" id="restaurantMembershipPriceField" style="display: none;">
+              <label>Restaurant Membership Price:</label>
+              <span id="normalRestaurantMembershipPrice">₹100.00</span>
+            </div>
+            <div id="finalBillsSection" class="mt-3">
+              <h5>Final Bills</h5>
+              <table class="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>DD Bill</th>
+                    <th>Bridge Bill</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Effective Final Bill Value: <span id="ddBillValue">₹0.00</span></td>
+                    <td>Effective Bridge Final Bill Value: <span id="bridgeBillValue">₹0.00</span></td>
+                  </tr>
+                  <tr>
+                    <td>Effective Round Off Final Bill Value: <span id="ddRoundOffFinalBillValue">₹0.00</span></td>
+                    <td>Effective Bridge Round Off Final Bill Value: <span id="bridgeRoundOffBillValue">₹0.00</span></td>
+                  </tr>
+                  <tr>
+                    <td>Round Off Value: <span id="ddRoundOffValue">₹0.00</span></td>
+                    <td>Bridge Round Off Value: <span id="bridgeRoundOffValueFinal">₹0.00</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item Type Wise Bill Column -->
+        <div class="col-md-6">
+          <div class="box p-3">
+            <h4>Item Type Wise Bill</h4>
+            <div class="mb-2">
+              <label for="itemTypeDropdown">Select Category:</label>
+              <select id="itemTypeDropdown" class="form-select">
+                <option value="Food">Food</option>
+                <option value="Hookah">Hookah</option>
+                <option value="Others">Others</option>
+                <option value="Packaged Item">Packaged Item</option>
+                <option value="Alcoholic Beverage">Alcoholic Beverage</option>
+                <option value="Non Alcoholic Beverage">Non Alcoholic Beverage</option>
+                <option value="Tobacco">Tobacco</option>
+                <option value="MRP">MRP</option>
+              </select>
+            </div>
+            <button id="showItemBillBtn" class="btn btn-primary mb-2">Show Bill Calculation</button>
+            <div id="itemBillDetails" class="hidden">
+              <div class="mb-2">
+                <strong>Dishes In The Selected Category:</strong><br>
+                <span id="itemBillDishes"></span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Dish Value:</strong> <span id="itemBillEffectiveValue">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Discount:</strong> <span id="itemBillEffectiveDiscount">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Discounted Price:</strong> <span id="itemBillDiscountedValue">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Bill Service Charge:</strong> <span id="itemBillServiceCharge">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Bill Packaging Charges:</strong> <span id="itemBillPackagingCharges">₹0.00</span>
+              </div>
+              <hr>
+              <div class="mb-2">
+                <h5>Taxes</h5>
+                <table class="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Value (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Category Wise CGST</td>
+                      <td id="itemBillCGST">₹0.00</td>
+                    </tr>
+                    <tr>
+                      <td>Category Wise SGST</td>
+                      <td id="itemBillSGST">₹0.00</td>
+                    </tr>
+                    <tr>
+                      <td>Category Wise Service Charge CGST</td>
+                      <td id="itemBillSCCGST">₹0.00</td>
+                    </tr>
+                    <tr>
+                      <td>Category Wise Service Charge SGST</td>
+                      <td id="itemBillSCSGST">₹0.00</td>
+                    </tr>
+                    <tr>
+                      <td>Total Category Wise CGST</td>
+                      <td id="itemBillTotalCGST">₹0.00</td>
+                    </tr>
+                    <tr>
+                      <td>Total Category Wise SGST</td>
+                      <td id="itemBillTotalSGST">₹0.00</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Bridge Final Bill Value:</strong> <span id="itemBillBridgeFinal">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Effective Category Wise Bridge Round Off Final Bill Value:</strong> <span id="itemBillBridgeRoundOffFinal">₹0.00</span>
+              </div>
+              <div class="mb-2">
+                <strong>Category Wise Bridge Round Off Value:</strong> <span id="itemBillBridgeRoundOff">₹0.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------
+    // Global Variables and Data
+    // -------------------------------
+    let breakdownExpanded = false;
+    let dishWiseVisible = false;
+    let categoryWiseVisible = false;
+    const dishes = [
+      { name: "Fried Rice", category: "Food", price: 100, packaging: 0 },
+      { name: "Variation Hookah", category: "Hookah", price: 300.25, packaging: 0 },
+      { name: "Variation Others", category: "Others", price: 227.9, packaging: 0 },
+      { name: "Variation Food", category: "Food", price: 350, packaging: 0 },
+      { name: "Variation Hookah 2", category: "Hookah", price: 400.56, packaging: 0 },
+      { name: "Variation Others 2", category: "Others", price: 451.98, packaging: 0 },
+      { name: "Addon Packaged Item", category: "Packaged Item", price: 100.25, packaging: 0 },
+      { name: "Addon Alcoholic Beverage", category: "Alcoholic Beverage", price: 150.75, packaging: 0 },
+      { name: "Addon Non Alcoholic Beverage", category: "Non Alcoholic Beverage", price: 175, packaging: 0 },
+      { name: "Addon Tobacco", category: "Tobacco", price: 200.28, packaging: 0 },
+      { name: "Addon MRP", category: "MRP", price: 225.99, packaging: 0 },
+      { name: "Addon Packaged Item 2", category: "Packaged Item", price: 200, packaging: 0 },
+      { name: "Addon Alcoholic Beverage 2", category: "Alcoholic Beverage", price: 600.5, packaging: 0 },
+      { name: "Addon Non Alcoholic Beverage 2", category: "Non Alcoholic Beverage", price: 455.8, packaging: 0 },
+      { name: "Addon Tobacco 2", category: "Tobacco", price: 200.5, packaging: 0 },
+      { name: "Addon MRP 2", category: "MRP", price: 301.5, packaging: 0 },
+      { name: "Fireball", category: "Alcoholic Beverage", price: 200, packaging: 100 },
+      { name: "SCYDY", category: "Food", price: 100, packaging: 0 }
+    ];
+    const categories = [
+      "Food",
+      "Hookah",
+      "Others",
+      "Packaged Item",
+      "Alcoholic Beverage",
+      "Non Alcoholic Beverage",
+      "Tobacco",
+      "MRP"
+    ];
+
+    // -------------------------------
+    // 1. updateDishDeleteButtons
+    // -------------------------------
+    function updateDishDeleteButtons() {
+      const form = document.getElementById('mainForm');
+      const dishRows = form.querySelectorAll('.input-row:not(.total-row)');
+      if (dishRows.length <= 1) {
+        dishRows.forEach(row => {
+          const delBtn = row.querySelector('.delete-dish');
+          if (delBtn) delBtn.disabled = true;
+        });
+      } else {
+        dishRows.forEach(row => {
+          const delBtn = row.querySelector('.delete-dish');
+          if (delBtn) delBtn.disabled = false;
+        });
+      }
+    }
+
+    // -------------------------------
+    // 2. createDishRows & addNewDishRow
+    // -------------------------------
+    function createDishRows() {
+      const form = document.getElementById('mainForm');
+      form.innerHTML = "";
+      dishes.forEach(dish => {
+        const row = document.createElement('div');
+        row.className = 'input-row';
+        let optionsHTML = "";
+        categories.forEach(cat => {
+          optionsHTML += `<option value="${cat}" ${cat === dish.category ? "selected" : ""}>${cat}</option>`;
+        });
+        row.innerHTML = `
+          <span class="dish-name">
+            <input type="text" class="dish-name-input form-control" value="${dish.name}">
+          </span>
+          <span class="dish-category">
+            <select class="dish-category-input form-control">
+              ${optionsHTML}
+            </select>
+          </span>
+          <div class="input-group">
+            <input type="number" class="quantity form-control" min="0" step="1" value="2">
+          </div>
+          <div class="input-group">
+            <input type="number" class="price form-control" step="0.01" value="${dish.price}">
+          </div>
+          <div class="input-group">
+            <div class="effective-value" data-effective="price">0.00</div>
+          </div>
+          <div class="input-group">
+            <input type="number" class="packaging form-control" step="0.01" value="${dish.packaging}">
+          </div>
+          <div class="input-group">
+            <div class="effective-value" data-effective="packaging">0.00</div>
+          </div>
+          <div class="input-group delete-container">
+            <button class="btn btn-sm btn-danger delete-dish">Delete</button>
+          </div>
+        `;
+        form.appendChild(row);
+      });
+      // Append Total Summary Row
+      const totalRow = document.createElement('div');
+      totalRow.className = 'input-row total-row';
+      totalRow.innerHTML = `
+        <span class="dish-name">Total Summary</span>
+        <span class="dish-category"></span>
+        <div class="input-group"></div>
+        <div class="input-group"></div>
+        <div class="input-group">
+          <div class="effective-value">₹<span id="total-effective-price">0.00</span></div>
+        </div>
+        <div class="input-group"></div>
+        <div class="input-group">
+          <div class="effective-value">₹<span id="total-effective-packaging">0.00</span></div>
+        </div>
+        <div class="input-group delete-container"></div>
+      `;
+      form.appendChild(totalRow);
+      updateDishDeleteButtons();
+    }
+
+    function addNewDishRow() {
+      const form = document.getElementById('mainForm');
+      const row = document.createElement('div');
+      row.className = 'input-row';
+      row.innerHTML = `
+        <span class="dish-name">
+          <input type="text" class="dish-name-input form-control" value="">
+        </span>
+        <span class="dish-category">
+          <select class="dish-category-input form-control">
+            ${categories.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </span>
+        <div class="input-group">
+          <input type="number" class="quantity form-control" min="0" step="1" value="">
+        </div>
+        <div class="input-group">
+          <input type="number" class="price form-control" step="0.01" value="">
+        </div>
+        <div class="input-group">
+          <div class="effective-value" data-effective="price">0.00</div>
+        </div>
+        <div class="input-group">
+          <input type="number" class="packaging form-control" step="0.01" value="">
+        </div>
+        <div class="input-group">
+          <div class="effective-value" data-effective="packaging">0.00</div>
+        </div>
+        <div class="input-group delete-container">
+          <button class="btn btn-sm btn-danger delete-dish">Delete</button>
+        </div>
+      `;
+      form.insertBefore(row, form.lastElementChild);
+      row.querySelectorAll('input, select').forEach(input => {
+        input.addEventListener('input', () => calculateEffectiveValues(row));
+      });
+      row.querySelector('.delete-dish').addEventListener('click', function(e) {
+        e.preventDefault();
+        const dishRows = document.querySelectorAll('#mainForm .input-row:not(.total-row)');
+        if (dishRows.length > 1) {
+          row.remove();
+        } else {
+          alert("At least one dish must be present.");
+        }
+        updateDishDeleteButtons();
+        calculateTotals();
+        calculateCategoryTotals();
+        updateBillCalculation();
+      });
+    }
+
+    // -------------------------------
+    // 3. Dish Calculation Functions
+    // -------------------------------
+    function calculateEffectiveValues(row) {
+      const qtyInput = row.querySelector('.quantity');
+      const priceInput = row.querySelector('.price');
+      const packagingInput = row.querySelector('.packaging');
+      if (!qtyInput || !priceInput || !packagingInput) return;
+      const qty = parseFloat(qtyInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      const packaging = parseFloat(packagingInput.value) || 0;
+      const effectivePrice = qty * price;
+      const effectivePackaging = qty * packaging;
+      row.querySelector('[data-effective="price"]').textContent = effectivePrice.toFixed(2);
+      row.querySelector('[data-effective="packaging"]').textContent = effectivePackaging.toFixed(2);
+      calculateTotals();
+      calculateCategoryTotals();
+      updateBillCalculation();
+    }
+
+    function calculateTotals() {
+      let totalPrice = 0, totalPackaging = 0;
+      document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+        totalPrice += parseFloat(el.textContent) || 0;
+      });
+      document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="packaging"]').forEach(el => {
+        totalPackaging += parseFloat(el.textContent) || 0;
+      });
+      document.getElementById('total-effective-price').textContent = totalPrice.toFixed(2);
+      document.getElementById('total-effective-packaging').textContent = totalPackaging.toFixed(2);
+    }
+
+    function calculateCategoryTotals() {
+      const categoryTotals = {};
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        const catInput = row.querySelector('.dish-category-input');
+        const cat = catInput ? catInput.value : "";
+        const effPrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + effPrice;
+      });
+      return categoryTotals;
+    }
+
+    // -------------------------------
+    // 4. Compute Total Discount Functions
+    // -------------------------------
+    function computeTotalDiscount() {
+      let totalDiscount = 0;
+      const dtElem = document.querySelector('input[name="discountType"]:checked');
+      if (dtElem) {
+        const type = dtElem.value;
+        if (type === "general") {
+          const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+            const effPrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+            const cat = row.querySelector('.dish-category-input').value || "";
+            const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${cat}"]`);
+            if (checkbox && checkbox.checked) {
+              totalDiscount += effPrice * percentage / 100;
+            }
+          });
+        } else if (type === "cash") {
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          order.forEach((cat, index) => {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            totalDiscount += cashVal;
+          });
+        } else if (type === "elite") {
+          let totalEff = 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+            totalEff += parseFloat(el.textContent) || 0;
+          });
+          let tierDisc = getEliteTierDiscount(totalEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+            const effPrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+            totalDiscount += effPrice * applied / 100;
+          });
+        }
+      }
+      return totalDiscount;
+    }
+
+    function getEliteTierDiscount(totalEff) {
+      let tierDiscount = 0;
+      const rows = document.querySelectorAll('#eliteTierTable tbody tr');
+      rows.forEach(row => {
+        const discInput = row.querySelector('.elite-tier-discount');
+        const earnInput = row.querySelector('.elite-tier-earn');
+        const discVal = parseFloat(discInput.value) || 0;
+        const earnVal = parseFloat(earnInput.value) || 0;
+        if (earnVal > 0 && totalEff >= earnVal) {
+          if (discVal > tierDiscount) {
+            tierDiscount = discVal;
+          }
+        }
+      });
+      return tierDiscount;
+    }
+
+    // -------------------------------
+    // 5. Update Bill Calculation
+    // -------------------------------
+    function updateBillCalculation() {
+      // Effective Dish Value
+      let totalEff = 0;
+      document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+        totalEff += parseFloat(el.textContent) || 0;
+      });
+      document.getElementById('normalBillEffectiveValue').textContent = '₹' + totalEff.toFixed(2);
+
+      // Discount Type Text (for normal bill; not used in item type wise)
+      const applyDiscountYes = document.querySelector('input[name="applyDiscount"][value="yes"]:checked');
+      let discountType = null;
+      let discountTypeText = "None";
+      if (applyDiscountYes) {
+        const dtElem = document.querySelector('input[name="discountType"]:checked');
+        if (dtElem) {
+          discountType = dtElem.value;
+          if (discountType === "elite") {
+            let tierDisc = getEliteTierDiscount(totalEff);
+            let membershipDisc = 0;
+            const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+            if (membershipRadio && membershipRadio.value === "yes") {
+              membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+            }
+            discountTypeText = (membershipDisc > 0)
+              ? `Elite Discount (${tierDisc}%) + Restaurant Membership Discount (${membershipDisc}%)`
+              : `Elite Discount (${tierDisc}%)`;
+          } else {
+            discountTypeText = (discountType === "general") ? "General Discount" : "Cash Discount";
+          }
+        }
+      }
+      document.getElementById('normalBillDiscountApplied').textContent = discountTypeText;
+
+      // Total Discount
+      let totalDiscount = computeTotalDiscount();
+      document.getElementById('billDiscountValue').textContent = '₹' + totalDiscount.toFixed(2);
+
+      // Effective Bill Dish Value
+      let billDish = totalEff - totalDiscount;
+      document.getElementById('billDishValue').textContent = '₹' + billDish.toFixed(2);
+
+      // Service Charge
+      let scPercent = parseFloat(document.querySelector('.service-charge').value) || 0;
+      let billSC = billDish * scPercent / 100;
+      document.getElementById('billServiceCharge').textContent = '₹' + billSC.toFixed(2);
+
+      // Packaging Charges
+      let totalPack = 0;
+      document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="packaging"]').forEach(el => {
+        totalPack += parseFloat(el.textContent) || 0;
+      });
+      document.getElementById('billPackagingCharges').textContent = '₹' + totalPack.toFixed(2);
+
+      // Taxes (Normal Bill)
+      let cgstPercent = parseFloat(document.querySelector('.cgst').value) || 0;
+      let billCGST = billDish * cgstPercent / 100;
+      let sgstPercent = parseFloat(document.querySelector('.sgst').value) || 0;
+      let billSGST = billDish * sgstPercent / 100;
+      let taxOnService = document.querySelector('input[name="taxOnServiceCharge"]:checked').value;
+      let scCGST = 0, scSGST = 0;
+      if (taxOnService === "yes") {
+        let scCGSTPercent = parseFloat(document.querySelector('.service-cgst').value) || 0;
+        scCGST = billSC * scCGSTPercent / 100;
+        let scSGSTPercent = parseFloat(document.querySelector('.service-sgst').value) || 0;
+        scSGST = billSC * scSGSTPercent / 100;
+      }
+      const applyTax = document.querySelector('input[name="applyTax"]:checked').value;
+      if (applyTax === "no") {
+        billCGST = 0;
+        billSGST = 0;
+        scCGST = 0;
+        scSGST = 0;
+      }
+      let totalCGST = billCGST + scCGST;
+      let totalSGST = billSGST + scSGST;
+      document.getElementById('billCGST').textContent = '₹' + totalCGST.toFixed(2);
+      document.getElementById('billSGST').textContent = '₹' + totalSGST.toFixed(2);
+      document.getElementById('serviceChargeCGST').textContent = '₹' + scCGST.toFixed(2);
+      document.getElementById('serviceChargeSGST').textContent = '₹' + scSGST.toFixed(2);
+      document.getElementById('totalCGST').textContent = '₹' + totalCGST.toFixed(2);
+      document.getElementById('totalSGST').textContent = '₹' + totalSGST.toFixed(2);
+
+      // UCF
+      let ucfApplicable = document.querySelector('input[name="ucfApplicable"]:checked').value;
+      let billUCF = 0;
+      if (ucfApplicable === "yes") {
+        let ucfPercent = parseFloat(document.getElementById('ucfPercentage').value) || 0;
+        billUCF = billDish * ucfPercent / 100;
+      }
+      document.getElementById('billUCF').textContent = '₹' + billUCF.toFixed(2);
+      let ucf_CGST = 0, ucf_SGST = 0, ucf_Total = 0;
+      if (ucfApplicable === "yes") {
+        ucf_CGST = billUCF * 9 / 100;
+        ucf_SGST = billUCF * 9 / 100;
+      }
+      ucf_Total = ucf_CGST + ucf_SGST;
+      document.getElementById('billUCF_CGST').textContent = '₹' + ucf_CGST.toFixed(2);
+      document.getElementById('billUCF_SGST').textContent = '₹' + ucf_SGST.toFixed(2);
+      document.getElementById('billUCF_Total').textContent = '₹' + ucf_Total.toFixed(2);
+
+      // Final Bill Calculation (Normal Bill)
+      let finalBill = billDish + billSC + totalPack + totalCGST + totalSGST + billUCF + ucf_Total;
+
+      // Add membership charges ONLY if: Apply Discount is yes, discount type is "elite", and user membership = no.
+      let membershipPriceAdd = 0;
+      const userMembership = document.querySelector('input[name="userMembershipStatus"]:checked');
+      if (applyDiscountYes) {
+        const dtElem = document.querySelector('input[name="discountType"]:checked');
+        if (dtElem && dtElem.value === "elite" && userMembership && userMembership.value === "no") {
+          const membershipPrice = parseFloat(document.querySelector('.membership-price').value) || 0;
+          membershipPriceAdd = membershipPrice;
+          document.getElementById('restaurantMembershipPriceField').style.display = "block";
+          document.getElementById('normalRestaurantMembershipPrice').textContent = '₹' + membershipPrice.toFixed(2);
+        } else {
+          document.getElementById('restaurantMembershipPriceField').style.display = "none";
+        }
+      } else {
+        document.getElementById('restaurantMembershipPriceField').style.display = "none";
+      }
+      finalBill += membershipPriceAdd;
+      document.getElementById('ddBillValue').textContent = '₹' + finalBill.toFixed(2);
+      let roundOffFinal = Math.round(finalBill);
+      document.getElementById('ddRoundOffFinalBillValue').textContent = '₹' + roundOffFinal.toFixed(2);
+      let roundOffVal = roundOffFinal - finalBill;
+      document.getElementById('ddRoundOffValue').textContent =
+        (roundOffVal >= 0 ? '+' : '') + '₹' + roundOffVal.toFixed(2);
+      
+      // Bridge Final Bill (Normal Bill without UCF)
+      let bridgeFinal = billDish + billSC + totalPack + totalCGST + totalSGST + membershipPriceAdd;
+      document.getElementById('bridgeBillValue').textContent = '₹' + bridgeFinal.toFixed(2);
+      let bridgeRoundOffFinal = Math.round(bridgeFinal);
+      document.getElementById('bridgeRoundOffBillValue').textContent = '₹' + bridgeRoundOffFinal.toFixed(2);
+      let bridgeRoundOff = bridgeRoundOffFinal - bridgeFinal;
+      document.getElementById('bridgeRoundOffValueFinal').textContent =
+        (bridgeRoundOff >= 0 ? '+' : '') + '₹' + bridgeRoundOff.toFixed(2);
+
+      // --- Update Cash Discount Totals ---
+      const catTotals = calculateCategoryTotals();
+      const mapping = {
+        "Food": "cash-discount-food-total",
+        "Hookah": "cash-discount-hookah-total",
+        "Others": "cash-discount-others-total",
+        "Packaged Item": "cash-discount-packaged-item-total",
+        "Alcoholic Beverage": "cash-discount-alcoholic-beverage-total",
+        "Non Alcoholic Beverage": "cash-discount-non-alcoholic-beverage-total",
+        "Tobacco": "cash-discount-tobacco-total",
+        "MRP": "cash-discount-mrp-total"
+      };
+      for (let cat in mapping) {
+        const el = document.getElementById(mapping[cat]);
+        if (el) {
+          el.textContent = "₹" + (catTotals[cat] ? catTotals[cat].toFixed(2) : "0.00");
+        }
+      }
+    }
+
+    // -------------------------------
+    // 6. Discount Breakdown Functions
+    // -------------------------------
+    function displayCompleteDishDiscountBreakdown(discountType) {
+      const breakdownDiv = document.getElementById('normalBillBreakdownSection');
+      let html = `<h5>Complete Dish Discount Breakdown</h5>`;
+      html += `<table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Dish Name</th>
+            <th>Effective Price (₹)</th>
+            <th>Discount Applied (₹)</th>
+            <th>Effective Discounted Price (₹)</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        const dishName = row.querySelector('.dish-name-input').value || "";
+        const effectivePrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        let dishDiscount = 0;
+        if (discountType === "general") {
+          const cat = row.querySelector('.dish-category-input').value || "";
+          const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${cat}"]`);
+          if (checkbox && checkbox.checked) {
+            const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+            dishDiscount = effectivePrice * percentage / 100;
+          }
+        } else if (discountType === "cash") {
+          const cat = row.querySelector('.dish-category-input').value || "";
+          const totals = calculateCategoryTotals();
+          const catTotal = totals[cat] || 0;
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          const index = order.indexOf(cat);
+          if (index >= 0 && catTotal > 0) {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            dishDiscount = (effectivePrice / catTotal) * cashVal;
+          }
+        } else if (discountType === "elite") {
+          let totalEff = 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+            totalEff += parseFloat(el.textContent) || 0;
+          });
+          let tierDisc = getEliteTierDiscount(totalEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          dishDiscount = effectivePrice * applied / 100;
+        }
+        const discountedPrice = effectivePrice - dishDiscount;
+        html += `<tr>
+          <td>${dishName}</td>
+          <td>${effectivePrice.toFixed(2)}</td>
+          <td>${dishDiscount.toFixed(2)}</td>
+          <td>${discountedPrice.toFixed(2)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      breakdownDiv.innerHTML = html;
+    }
+
+    function displayCategoryWiseDiscountBreakdown(discountType) {
+      const breakdownDiv = document.getElementById('normalBillBreakdownSection');
+      let categoryData = {};
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        const cat = row.querySelector('.dish-category-input').value || "";
+        const effectivePrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        let dishDiscount = 0;
+        if (discountType === "general") {
+          const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${cat}"]`);
+          if (checkbox && checkbox.checked) {
+            const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+            dishDiscount = effectivePrice * percentage / 100;
+          }
+        } else if (discountType === "cash") {
+          const totals = calculateCategoryTotals();
+          const catTotal = totals[cat] || 0;
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          const index = order.indexOf(cat);
+          if (index >= 0 && catTotal > 0) {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            dishDiscount = (effectivePrice / catTotal) * cashVal;
+          }
+        } else if (discountType === "elite") {
+          let totalEff = 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+            totalEff += parseFloat(el.textContent) || 0;
+          });
+          let tierDisc = getEliteTierDiscount(totalEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          dishDiscount = effectivePrice * applied / 100;
+        }
+        const discountedPrice = effectivePrice - dishDiscount;
+        if (!categoryData[cat]) {
+          categoryData[cat] = { effective: 0, discount: 0, discounted: 0, packaging: 0, dishNames: [] };
+        }
+        categoryData[cat].effective += effectivePrice;
+        categoryData[cat].discount += dishDiscount;
+        categoryData[cat].discounted += discountedPrice;
+        const packaging = parseFloat(row.querySelector('[data-effective="packaging"]').textContent) || 0;
+        categoryData[cat].packaging += packaging;
+        const dishName = row.querySelector('.dish-name-input').value || "";
+        categoryData[cat].dishNames.push(dishName);
+      });
+      let html = `<h5>Category Wise Discount Breakdown</h5>`;
+      html += `<table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Effective Category Price (₹)</th>
+            <th>Discount Applied (₹)</th>
+            <th>Effective Discounted Price (₹)</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      for (let cat in categoryData) {
+        const data = categoryData[cat];
+        html += `<tr>
+          <td>${cat}</td>
+          <td>${data.effective.toFixed(2)}</td>
+          <td>${data.discount.toFixed(2)}</td>
+          <td>${data.discounted.toFixed(2)}</td>
+        </tr>`;
+      }
+      html += `</tbody></table>`;
+      breakdownDiv.innerHTML = html;
+    }
+
+    // -------------------------------
+    // 7. Initialize UCF Section
+    // -------------------------------
+    function initializeUCFSection() {
+      const ucfRadios = document.querySelectorAll('input[name="ucfApplicable"]');
+      const ucfFields = document.getElementById('ucfFields');
+      const ucfPercentageInput = document.getElementById('ucfPercentage');
+      const ucfGstInput = document.getElementById('ucfGst');
+      ucfRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.value === "yes" && radio.checked) {
+            ucfFields.classList.remove('hidden');
+            ucfPercentageInput.value = 10.25;
+            ucfGstInput.value = 18;
+            document.getElementById('applyUCFBtn').style.display = "block";
+          } else if (radio.value === "no" && radio.checked) {
+            ucfFields.classList.add('hidden');
+            ucfPercentageInput.value = 0;
+            ucfGstInput.value = 0;
+            document.getElementById('applyUCFBtn').style.display = "none";
+          }
+          updateBillCalculation();
+        });
+      });
+    }
+
+    // -------------------------------
+    // 8. Initialize Dish Rows and Their Events
+    // -------------------------------
+    function initializeDishRows() {
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        calculateEffectiveValues(row);
+        row.querySelectorAll('input, select').forEach(input => {
+          input.addEventListener('input', () => calculateEffectiveValues(row));
+        });
+        const delBtn = row.querySelector('.delete-dish');
+        if (delBtn) {
+          delBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dishRows = document.querySelectorAll('#mainForm .input-row:not(.total-row)');
+            if (dishRows.length > 1) {
+              this.closest('.input-row').remove();
+            } else {
+              alert("At least one dish must be present.");
+            }
+            updateDishDeleteButtons();
+            calculateTotals();
+            calculateCategoryTotals();
+            updateBillCalculation();
+          });
+        }
+      });
+    }
+
+    // -------------------------------
+    // 9. Initialize Discount Section Events
+    // -------------------------------
+    function initializeDiscountSection() {
+      const applyDiscountRadios = document.querySelectorAll('input[name="applyDiscount"]');
+      const discountTypeRadios = document.querySelectorAll('input[name="discountType"]');
+      const discountSection = document.getElementById('discountSection');
+      const generalDiscountSection = document.getElementById('generalDiscountSection');
+      const cashDiscountSection = document.getElementById('cashDiscountSection');
+      const eliteDiscountSection = document.getElementById('eliteDiscountSection');
+      applyDiscountRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          discountSection.classList.toggle('hidden', radio.value === "no");
+          if (radio.value === "no") {
+            discountTypeRadios.forEach(r => r.checked = false);
+            generalDiscountSection.classList.add('hidden');
+            cashDiscountSection.classList.add('hidden');
+            eliteDiscountSection.classList.add('hidden');
+            document.querySelector('.discount-percentage').value = 0;
+            document.querySelectorAll('#generalDiscountSection input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.cash-discount').forEach(input => input.value = 0);
+            document.getElementById('applyDiscountBtn').disabled = true;
+            document.getElementById('discountResult').innerHTML = "";
+            document.getElementById('normalBillBreakdownSection').innerHTML = "";
+            updateBillCalculation();
+          }
+        });
+      });
+      discountTypeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          generalDiscountSection.classList.toggle('hidden', radio.value !== "general");
+          cashDiscountSection.classList.toggle('hidden', radio.value !== "cash");
+          eliteDiscountSection.classList.toggle('hidden', radio.value !== "elite");
+          document.getElementById('discountResult').innerHTML = "";
+          validateDiscountInputs();
+          updateBillCalculation();
+        });
+      });
+      const restaurantMembershipRadios = document.querySelectorAll('input[name="restaurantMembership"]');
+      restaurantMembershipRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          const membershipDiv = document.getElementById('membershipDiscountDiv');
+          if (radio.value === "yes" && radio.checked) {
+            membershipDiv.classList.remove('hidden');
+          } else {
+            membershipDiv.classList.add('hidden');
+          }
+          updateBillCalculation();
+        });
+      });
+      const userMembershipRadios = document.querySelectorAll('input[name="userMembershipStatus"]');
+      userMembershipRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          validateDiscountInputs();
+          updateBillCalculation();
+        });
+      });
+      document.getElementById('addTierBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        const tbody = document.querySelector('#eliteTierTable tbody');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `<td><input type="number" class="elite-tier-discount form-control" step="0.01" max="100" placeholder="Discount %"></td>
+                            <td><input type="number" class="elite-tier-earn form-control" step="0.01" placeholder="Earn Criteria"></td>
+                            <td><button class="btn btn-sm btn-danger delete-tier">Delete</button></td>`;
+        tbody.appendChild(newRow);
+        updateEliteTierDeleteButtons();
+        newRow.querySelector('.delete-tier').addEventListener('click', function(e) {
+          e.preventDefault();
+          const tbody = document.querySelector('#eliteTierTable tbody');
+          if (tbody.rows.length > 1) {
+            this.closest('tr').remove();
+            updateEliteTierDeleteButtons();
+          } else {
+            alert("At least one tier must be present.");
+          }
+        });
+      });
+      document.querySelectorAll('.delete-tier').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const tbody = document.querySelector('#eliteTierTable tbody');
+          if (tbody.rows.length > 1) {
+            this.closest('tr').remove();
+            updateEliteTierDeleteButtons();
+          } else {
+            alert("At least one tier must be present.");
+          }
+        });
+      });
+      const numericInputs = document.querySelectorAll('.discount-section input[type="number"], .cash-discount, .membership-discount, .membership-price');
+      numericInputs.forEach(input => {
+        input.addEventListener('input', () => {
+          validateDiscountInputs();
+          updateBillCalculation();
+        });
+      });
+    }
+
+    // -------------------------------
+    // 10. Validate Discount Inputs
+    // -------------------------------
+    function validateDiscountInputs() {
+      const applyBtn = document.getElementById('applyDiscountBtn');
+      const dtElem = document.querySelector('input[name="discountType"]:checked');
+      if (!dtElem) { applyBtn.disabled = true; return; }
+      const type = dtElem.value;
+      if (type === "general") {
+        const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+        const checkboxes = document.querySelectorAll('#generalDiscountSection input[type="checkbox"]');
+        let anyChecked = false;
+        checkboxes.forEach(cb => { if (cb.checked) anyChecked = true; });
+        applyBtn.disabled = !(percentage > 0 && anyChecked);
+      } else if (type === "cash") {
+        const cashInputs = document.querySelectorAll('.cash-discount');
+        let valid = false;
+        cashInputs.forEach(input => {
+          const val = parseFloat(input.value) || 0;
+          if (val >= 1) valid = true;
+        });
+        applyBtn.disabled = !valid;
+      } else if (type === "elite") {
+        let valid = false;
+        const rows = document.querySelectorAll('#eliteTierTable tbody tr');
+        rows.forEach(row => {
+          const discountInput = row.querySelector('.elite-tier-discount');
+          const earnInput = row.querySelector('.elite-tier-earn');
+          if (discountInput.value !== "" && earnInput.value !== "") {
+            valid = true;
+          }
+        });
+        const userMembershipRadio = document.querySelector('input[name="userMembershipStatus"]:checked');
+        if (!userMembershipRadio) valid = false;
+        if (userMembershipRadio && userMembershipRadio.value === "yes") {
+          const membershipDiscount = document.querySelector('.membership-discount').value;
+          if (membershipDiscount === "") valid = false;
+        }
+        applyBtn.disabled = !valid;
+      }
+    }
+
+    // -------------------------------
+    // 11. Apply Discount Handler
+    // -------------------------------
+    function applyDiscount() {
+      const dtElem = document.querySelector('input[name="discountType"]:checked');
+      if (!dtElem) return;
+      const type = dtElem.value;
+      const resultDiv = document.getElementById('discountResult');
+      let html = "";
+      if (type === "general") {
+        const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+        const checkboxes = document.querySelectorAll('#generalDiscountSection input[type="checkbox"]');
+        let selectedCategories = [];
+        checkboxes.forEach(cb => { if (cb.checked) selectedCategories.push(cb.value); });
+        if (selectedCategories.length === 0) {
+          alert("Please select at least one category for general discount.");
+          return;
+        }
+        html += `<h5>General Discount Applied</h5><ul>`;
+        selectedCategories.forEach(cat => {
+          const catTotal = (calculateCategoryTotals()[cat] || 0);
+          const discAmount = catTotal * percentage / 100;
+          html += `<li>${cat}: ${percentage.toFixed(2)}% on ₹${catTotal.toFixed(2)} = ₹${discAmount.toFixed(2)}</li>`;
+        });
+        html += `</ul>`;
+      } else if (type === "cash") {
+        html += `<h5>Cash Discount Applied</h5><ul>`;
+        const cashInputs = document.querySelectorAll('.cash-discount');
+        const labels = ["Food", "Hookah", "Others", "Packaged Item", "Alcoholic Beverage", "Non Alcoholic Beverage", "Tobacco", "MRP"];
+        cashInputs.forEach((input, index) => {
+          const val = parseFloat(input.value) || 0;
+          if (val >= 1) {
+            html += `<li>${labels[index]}: ₹${val.toFixed(2)}</li>`;
+          }
+        });
+        html += `</ul>`;
+      } else if (type === "elite") {
+        let totalEff = 0;
+        document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+          totalEff += parseFloat(el.textContent) || 0;
+        });
+        let tierDisc = getEliteTierDiscount(totalEff);
+        let membershipDisc = 0;
+        const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+        if (membershipRadio && membershipRadio.value === "yes") {
+          membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+        }
+        html += `<h5>Elite Discount Applied</h5><ul>`;
+        if (membershipDisc > 0) {
+          html += `<li>Elite Discount: ${tierDisc}% + Restaurant Membership Discount: ${membershipDisc}%</li>`;
+        } else {
+          html += `<li>Elite Discount: ${tierDisc}%</li>`;
+        }
+        html += `</ul>`;
+      }
+      resultDiv.innerHTML = html;
+      updateBillCalculation();
+    }
+
+    // -------------------------------
+    // 12. Toggle Dish Calculations Visibility
+    // -------------------------------
+    function toggleDishCalculations() {
+      const container = document.getElementById('dishCalculationsContainer');
+      const toggleBtn = document.getElementById('toggleDishCalculations');
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        toggleBtn.textContent = "▲";
+      } else {
+        container.classList.add('hidden');
+        toggleBtn.textContent = "▼";
+      }
+    }
+
+    // -------------------------------
+    // 13. Toggle Discount Breakdown Buttons (New)
+    // -------------------------------
+    function toggleDishWiseBreakdown() {
+      if (categoryWiseVisible) {
+        document.getElementById('normalBillBreakdownSection').style.display = "none";
+        document.getElementById('categoryWiseBreakdownBtn').textContent = 'Show Category Wise Discount Breakdown';
+        categoryWiseVisible = false;
+      }
+      if (!dishWiseVisible) {
+        const dtElem = document.querySelector('input[name="discountType"]:checked');
+        let discountType = dtElem ? dtElem.value : "general";
+        displayCompleteDishDiscountBreakdown(discountType);
+        document.getElementById('normalBillBreakdownSection').style.display = "block";
+        document.getElementById('dishWiseBreakdownBtn').textContent = 'Hide Dish Wise Discount Breakdown';
+        dishWiseVisible = true;
+      } else {
+        document.getElementById('normalBillBreakdownSection').style.display = "none";
+        document.getElementById('dishWiseBreakdownBtn').textContent = 'Show Dish Wise Discount Breakdown';
+        dishWiseVisible = false;
+      }
+    }
+
+    function toggleCategoryWiseBreakdown() {
+      if (dishWiseVisible) {
+        document.getElementById('normalBillBreakdownSection').style.display = "none";
+        document.getElementById('dishWiseBreakdownBtn').textContent = 'Show Dish Wise Discount Breakdown';
+        dishWiseVisible = false;
+      }
+      if (!categoryWiseVisible) {
+        const dtElem = document.querySelector('input[name="discountType"]:checked');
+        let discountType = dtElem ? dtElem.value : "general";
+        displayCategoryWiseDiscountBreakdown(discountType);
+        document.getElementById('normalBillBreakdownSection').style.display = "block";
+        document.getElementById('categoryWiseBreakdownBtn').textContent = 'Hide Category Wise Discount Breakdown';
+        categoryWiseVisible = true;
+      } else {
+        document.getElementById('normalBillBreakdownSection').style.display = "none";
+        document.getElementById('categoryWiseBreakdownBtn').textContent = 'Show Category Wise Discount Breakdown';
+        categoryWiseVisible = false;
+      }
+    }
+
+    // -------------------------------
+    // 14. Show Item Type Wise Bill Calculation
+    // -------------------------------
+    function showItemBillCalculation() {
+      const selectedCategory = document.getElementById('itemTypeDropdown').value;
+      const rows = Array.from(document.querySelectorAll('#mainForm .input-row:not(.total-row)'))
+        .filter(row => row.querySelector('.dish-category-input').value.trim() === selectedCategory.trim());
+      const dishInfo = rows.map(row => {
+        const name = row.querySelector('.dish-name-input').value;
+        const price = row.querySelector('[data-effective="price"]').textContent;
+        return `${name} (₹${price})`;
+      }).join("<br>");
+      const itemBillDishesElem = document.getElementById('itemBillDishes');
+      if (itemBillDishesElem) {
+        itemBillDishesElem.innerHTML = dishInfo || "None";
+      }
+      let effectiveCategoryValue = 0;
+      let totalPackaging = 0;
+      rows.forEach(row => {
+        effectiveCategoryValue += parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        totalPackaging += parseFloat(row.querySelector('[data-effective="packaging"]').textContent) || 0;
+      });
+      const itemBillEffectiveValueElem = document.getElementById('itemBillEffectiveValue');
+      if (itemBillEffectiveValueElem) {
+        itemBillEffectiveValueElem.textContent = '₹' + effectiveCategoryValue.toFixed(2);
+      }
+      let totalDiscount = 0;
+      rows.forEach(row => {
+        const effectivePrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        let dishDiscount = 0;
+        const dtElem = document.querySelector('input[name="discountType"]:checked');
+        const discountType = dtElem ? dtElem.value : "none";
+        if (discountType === "general") {
+          const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${selectedCategory}"]`);
+          if (checkbox && checkbox.checked) {
+            const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+            dishDiscount = effectivePrice * percentage / 100;
+          }
+        }
+        else if (discountType === "cash") {
+          let totalCatEff = rows.reduce((sum, r) => sum + (parseFloat(r.querySelector('[data-effective="price"]').textContent) || 0), 0);
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          const index = order.indexOf(selectedCategory);
+          if (index >= 0 && totalCatEff > 0) {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            dishDiscount = (effectivePrice / totalCatEff) * cashVal;
+          }
+        }
+        else if (discountType === "elite") {
+          let totalCatEff = rows.reduce((sum, r) => sum + (parseFloat(r.querySelector('[data-effective="price"]').textContent) || 0), 0);
+          let tierDisc = getEliteTierDiscount(totalCatEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          dishDiscount = effectivePrice * applied / 100;
+        }
+        totalDiscount += dishDiscount;
+      });
+      const itemBillEffectiveDiscountElem = document.getElementById('itemBillEffectiveDiscount');
+      if (itemBillEffectiveDiscountElem) {
+        itemBillEffectiveDiscountElem.textContent = '₹' + totalDiscount.toFixed(2);
+      }
+      const effectiveDiscountedValue = effectiveCategoryValue - totalDiscount;
+      const itemBillDiscountedValueElem = document.getElementById('itemBillDiscountedValue');
+      if (itemBillDiscountedValueElem) {
+        itemBillDiscountedValueElem.textContent = '₹' + effectiveDiscountedValue.toFixed(2);
+      }
+      let serviceChargePercent = parseFloat(document.querySelector('.service-charge').value) || 0;
+      let categoryServiceCharge = 0;
+      if (document.querySelector('input[name="applyServiceCharge"]:checked').value === "yes") {
+        categoryServiceCharge = effectiveDiscountedValue * serviceChargePercent / 100;
+      }
+      const itemBillServiceChargeElem = document.getElementById('itemBillServiceCharge');
+      if (itemBillServiceChargeElem) {
+        itemBillServiceChargeElem.textContent = '₹' + categoryServiceCharge.toFixed(2);
+      }
+      const itemBillPackagingChargesElem = document.getElementById('itemBillPackagingCharges');
+      if (itemBillPackagingChargesElem) {
+        itemBillPackagingChargesElem.textContent = '₹' + totalPackaging.toFixed(2);
+      }
+      const cgstPercent = parseFloat(document.querySelector('.cgst').value) || 0;
+      const sgstPercent = parseFloat(document.querySelector('.sgst').value) || 0;
+      const catCGST = effectiveDiscountedValue * cgstPercent / 100;
+      const catSGST = effectiveDiscountedValue * sgstPercent / 100;
+      const itemBillCGSTElem = document.getElementById('itemBillCGST');
+      const itemBillSGSTElem = document.getElementById('itemBillSGST');
+      if (itemBillCGSTElem) {
+        itemBillCGSTElem.textContent = '₹' + catCGST.toFixed(2);
+      }
+      if (itemBillSGSTElem) {
+        itemBillSGSTElem.textContent = '₹' + catSGST.toFixed(2);
+      }
+      const scCGSTPercent = parseFloat(document.querySelector('.service-cgst').value) || 0;
+      const scSGSTPercent = parseFloat(document.querySelector('.service-sgst').value) || 0;
+      let catSCCGST = 0, catSCSGST = 0;
+      if (document.querySelector('input[name="taxOnServiceCharge"]:checked').value === "yes") {
+        catSCCGST = categoryServiceCharge * scCGSTPercent / 100;
+        catSCSGST = categoryServiceCharge * scSGSTPercent / 100;
+      }
+      if (document.querySelector('input[name="applyTax"]:checked').value === "no") {
+        catSCCGST = 0;
+        catSCSGST = 0;
+      }
+      const itemBillSCCGSTElem = document.getElementById('itemBillSCCGST');
+      const itemBillSCSGSTElem = document.getElementById('itemBillSCSGST');
+      if (itemBillSCCGSTElem) {
+        itemBillSCCGSTElem.textContent = '₹' + catSCCGST.toFixed(2);
+      }
+      if (itemBillSCSGSTElem) {
+        itemBillSCSGSTElem.textContent = '₹' + catSCSGST.toFixed(2);
+      }
+      const totalCatCGST = catCGST + catSCCGST;
+      const totalCatSGST = catSGST + catSCSGST;
+      const itemBillTotalCGSTElem = document.getElementById('itemBillTotalCGST');
+      const itemBillTotalSGSTElem = document.getElementById('itemBillTotalSGST');
+      if (itemBillTotalCGSTElem) {
+        itemBillTotalCGSTElem.textContent = '₹' + totalCatCGST.toFixed(2);
+      }
+      if (itemBillTotalSGSTElem) {
+        itemBillTotalSGSTElem.textContent = '₹' + totalCatSGST.toFixed(2);
+      }
+      const catBridgeFinal = effectiveDiscountedValue + categoryServiceCharge + totalPackaging + totalCatCGST + totalCatSGST;
+      const itemBillBridgeFinalElem = document.getElementById('itemBillBridgeFinal');
+      if (itemBillBridgeFinalElem) {
+        itemBillBridgeFinalElem.textContent = '₹' + catBridgeFinal.toFixed(2);
+      }
+      const catBridgeRoundOffFinal = Math.round(catBridgeFinal);
+      const itemBillBridgeRoundOffFinalElem = document.getElementById('itemBillBridgeRoundOffFinal');
+      if (itemBillBridgeRoundOffFinalElem) {
+        itemBillBridgeRoundOffFinalElem.textContent = '₹' + catBridgeRoundOffFinal.toFixed(2);
+      }
+      const catBridgeRoundOff = catBridgeRoundOffFinal - catBridgeFinal;
+      const itemBillBridgeRoundOffElem = document.getElementById('itemBillBridgeRoundOff');
+      if (itemBillBridgeRoundOffElem) {
+        itemBillBridgeRoundOffElem.textContent =
+          (catBridgeRoundOff >= 0 ? '+' : '') + '₹' + catBridgeRoundOff.toFixed(2);
+      }
+      const itemBillDetailsElem = document.getElementById('itemBillDetails');
+      if (itemBillDetailsElem) {
+        itemBillDetailsElem.style.display = "block";
+      }
+    }
+
+    // -------------------------------
+    // 6. Discount Breakdown Functions
+    // -------------------------------
+    function displayCompleteDishDiscountBreakdown(discountType) {
+      const breakdownDiv = document.getElementById('normalBillBreakdownSection');
+      let html = `<h5>Complete Dish Discount Breakdown</h5>`;
+      html += `<table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Dish Name</th>
+            <th>Effective Price (₹)</th>
+            <th>Discount Applied (₹)</th>
+            <th>Effective Discounted Price (₹)</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        const dishName = row.querySelector('.dish-name-input').value || "";
+        const effectivePrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        let dishDiscount = 0;
+        if (discountType === "general") {
+          const cat = row.querySelector('.dish-category-input').value || "";
+          const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${cat}"]`);
+          if (checkbox && checkbox.checked) {
+            const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+            dishDiscount = effectivePrice * percentage / 100;
+          }
+        } else if (discountType === "cash") {
+          const cat = row.querySelector('.dish-category-input').value || "";
+          const totals = calculateCategoryTotals();
+          const catTotal = totals[cat] || 0;
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          const index = order.indexOf(cat);
+          if (index >= 0 && catTotal > 0) {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            dishDiscount = (effectivePrice / catTotal) * cashVal;
+          }
+        } else if (discountType === "elite") {
+          let totalEff = 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+            totalEff += parseFloat(el.textContent) || 0;
+          });
+          let tierDisc = getEliteTierDiscount(totalEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          dishDiscount = effectivePrice * applied / 100;
+        }
+        const discountedPrice = effectivePrice - dishDiscount;
+        html += `<tr>
+          <td>${dishName}</td>
+          <td>${effectivePrice.toFixed(2)}</td>
+          <td>${dishDiscount.toFixed(2)}</td>
+          <td>${discountedPrice.toFixed(2)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      breakdownDiv.innerHTML = html;
+    }
+
+    function displayCategoryWiseDiscountBreakdown(discountType) {
+      const breakdownDiv = document.getElementById('normalBillBreakdownSection');
+      let categoryData = {};
+      document.querySelectorAll('#mainForm .input-row:not(.total-row)').forEach(row => {
+        const cat = row.querySelector('.dish-category-input').value || "";
+        const effectivePrice = parseFloat(row.querySelector('[data-effective="price"]').textContent) || 0;
+        let dishDiscount = 0;
+        if (discountType === "general") {
+          const checkbox = document.querySelector(`#generalDiscountSection input[type="checkbox"][value="${cat}"]`);
+          if (checkbox && checkbox.checked) {
+            const percentage = parseFloat(document.querySelector('.discount-percentage').value) || 0;
+            dishDiscount = effectivePrice * percentage / 100;
+          }
+        } else if (discountType === "cash") {
+          const totals = calculateCategoryTotals();
+          const catTotal = totals[cat] || 0;
+          const order = ["Food","Hookah","Others","Packaged Item","Alcoholic Beverage","Non Alcoholic Beverage","Tobacco","MRP"];
+          const index = order.indexOf(cat);
+          if (index >= 0 && catTotal > 0) {
+            const cashInput = document.querySelectorAll('.cash-discount')[index];
+            const cashVal = parseFloat(cashInput.value) || 0;
+            dishDiscount = (effectivePrice / catTotal) * cashVal;
+          }
+        } else if (discountType === "elite") {
+          let totalEff = 0;
+          document.querySelectorAll('#mainForm .input-row:not(.total-row) [data-effective="price"]').forEach(el => {
+            totalEff += parseFloat(el.textContent) || 0;
+          });
+          let tierDisc = getEliteTierDiscount(totalEff);
+          let membershipDisc = 0;
+          const membershipRadio = document.querySelector('input[name="restaurantMembership"]:checked');
+          if (membershipRadio && membershipRadio.value === "yes") {
+            membershipDisc = parseFloat(document.querySelector('.membership-discount').value) || 0;
+          }
+          let applied = tierDisc + membershipDisc;
+          dishDiscount = effectivePrice * applied / 100;
+        }
+        const discountedPrice = effectivePrice - dishDiscount;
+        if (!categoryData[cat]) {
+          categoryData[cat] = { effective: 0, discount: 0, discounted: 0, packaging: 0, dishNames: [] };
+        }
+        categoryData[cat].effective += effectivePrice;
+        categoryData[cat].discount += dishDiscount;
+        categoryData[cat].discounted += discountedPrice;
+        const packaging = parseFloat(row.querySelector('[data-effective="packaging"]').textContent) || 0;
+        categoryData[cat].packaging += packaging;
+        const dishName = row.querySelector('.dish-name-input').value || "";
+        categoryData[cat].dishNames.push(dishName);
+      });
+      let html = `<h5>Category Wise Discount Breakdown</h5>`;
+      html += `<table class="table table-bordered">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Effective Category Price (₹)</th>
+            <th>Discount Applied (₹)</th>
+            <th>Effective Discounted Price (₹)</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      for (let cat in categoryData) {
+        const data = categoryData[cat];
+        html += `<tr>
+          <td>${cat}</td>
+          <td>${data.effective.toFixed(2)}</td>
+          <td>${data.discount.toFixed(2)}</td>
+          <td>${data.discounted.toFixed(2)}</td>
+        </tr>`;
+      }
+      html += `</tbody></table>`;
+      breakdownDiv.innerHTML = html;
+    }
+
+    // -------------------------------
+    // 14. Reset All Default Values Button Handler
+    // -------------------------------
+    function initializeResetButton() {
+      document.getElementById('resetDefaultsBtn').addEventListener('click', () => {
+        // Delete all dish rows except those with dish name "fireball"
+        const form = document.getElementById('mainForm');
+        const dishRows = Array.from(form.querySelectorAll('.input-row:not(.total-row)'));
+        dishRows.forEach(row => {
+          const name = row.querySelector('.dish-name-input').value.trim().toLowerCase();
+          if (name !== "fireball") {
+            row.remove();
+          }
+        });
+        updateDishDeleteButtons();
+        calculateTotals();
+        calculateCategoryTotals();
+        
+        // Reset Service Charge Section to 0
+        document.querySelector('.service-charge').value = 0;
+        document.querySelector('.service-cgst').value = 0;
+        document.querySelector('.service-sgst').value = 0;
+        // Reset Tax Section to 0
+        document.querySelector('.cgst').value = 0;
+        document.querySelector('.sgst').value = 0;
+        // Reset Elite Discount Defaults to 0
+        document.querySelector('.membership-discount').value = 0;
+        document.querySelector('.membership-price').value = 0;
+        const eliteTbody = document.querySelector('#eliteTierTable tbody');
+        while (eliteTbody.rows.length > 1) {
+          eliteTbody.deleteRow(1);
+        }
+        // Reset UCF Section to 0
+        document.getElementById('ucfPercentage').value = 0;
+        document.getElementById('ucfGst').value = 0;
+        
+        // Update all calculations
+        updateBillCalculation();
+      });
+    }
+
+    // -------------------------------
+    // 15. Initialize Calculator
+    // -------------------------------
+    function initializeCalculator() {
+      createDishRows();
+      initializeDishRows();
+      initializeDiscountSection();
+      initializeUCFSection();
+      initializeResetButton();
+
+      document.getElementById('addDishBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        addNewDishRow();
+      });
+      
+      document.getElementById('applyDishChangesBtn').addEventListener('click', () => {
+        calculateTotals();
+        calculateCategoryTotals();
+        updateBillCalculation();
+      });
+      document.getElementById('applyDiscountBtn').addEventListener('click', applyDiscount);
+      document.getElementById('applyTaxBtn').addEventListener('click', () => {
+        updateBillCalculation();
+      });
+      document.getElementById('applyUCFBtn').addEventListener('click', () => {
+        updateBillCalculation();
+      });
+      document.getElementById('showItemBillBtn').addEventListener('click', showItemBillCalculation);
+      document.getElementById('toggleDishCalculations').addEventListener('click', toggleDishCalculations);
+      // New Discount Breakdown buttons
+      document.getElementById('dishWiseBreakdownBtn').addEventListener('click', toggleDishWiseBreakdown);
+      document.getElementById('categoryWiseBreakdownBtn').addEventListener('click', toggleCategoryWiseBreakdown);
+    }
+
+    window.addEventListener('DOMContentLoaded', initializeCalculator);
+  </script>
+</body>
+</html>

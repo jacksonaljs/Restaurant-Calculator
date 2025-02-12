@@ -1035,8 +1035,10 @@
       document.getElementById('billUCF').textContent = '₹' + billUCF.toFixed(2);
       let ucf_CGST = 0, ucf_SGST = 0, ucf_Total = 0;
       if (ucfApplicable === "yes") {
-        ucf_CGST = billUCF * 9 / 100;
-        ucf_SGST = billUCF * 9 / 100;
+        let ucfGst = parseFloat(document.getElementById('ucfGst').value) || 0;
+        let splitGst = ucfGst / 2;
+        ucf_CGST = billUCF * splitGst / 100;
+        ucf_SGST = billUCF * splitGst / 100;
       }
       ucf_Total = ucf_CGST + ucf_SGST;
       document.getElementById('billUCF_CGST').textContent = '₹' + ucf_CGST.toFixed(2);
